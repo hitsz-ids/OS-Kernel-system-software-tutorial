@@ -92,7 +92,7 @@ SSH服务器IP：10.249.12.98  端口：6666
 ```bash
 # 输入下面命令，下载 XV6 代码到实验服务器上
 
-git clone https://gitee.com/greenhandzpx/xv6-oslab23-hitsz.git
+git clone https://gitee.com/ftutorials/xv6-oslab24-hitsz.git
 
 # 查看代码是否下载成功
 
@@ -114,7 +114,7 @@ ls -lh
 
 ```bash
 # 进入代码目录，查看文件
-cd xv6-oslab23-hitsz
+cd xv6-oslab24-hitsz
 
 # 查看目录，你会发现里面只有一个 Readme.md 文件
 ls -lh
