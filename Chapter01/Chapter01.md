@@ -26,7 +26,7 @@ SSH服务器IP：10.249.12.98  端口：6666
 
 ## 二、登录远程服务器
 
-登录远程 Linux 服务器需要采用专门的软件来操作  [点这里：下载MobaXTerm软件](Software/MobaXterm_24.2.7z)
+登录远程 Linux 服务器需要采用专门的软件来操作  [点这里：下载MobaXTerm软件](../Software/MobaXterm_24.2.7z)
 
 1. 下载 MobaXTerm 软件，解压缩，如下：
 
