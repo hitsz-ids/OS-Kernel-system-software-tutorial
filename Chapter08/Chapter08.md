@@ -192,7 +192,7 @@ int  thread_join(int pid)
 
 
 
-实际上，99% 的程序，都是通过 **程序库** 来访问系统调用的。大家平时用的 printf、malloc、read、write、... 都是被 libc 库封装好的函数，由 libc 库去访问  系统调用，所以**你的程序实际上根本没有直接访问过任何 系统调用**。
+实际上，99% 的程序，都是通过 **程序库** 来访问系统调用的。大家平时用的 printf、malloc、read、write、... 都是被 libc 库封装好的函数，由 libc 库去访问系统调用，所以**你的程序实际上根本没有直接访问过任何 系统调用**。
 
 
 
@@ -200,7 +200,56 @@ int  thread_join(int pid)
 
 
 
+1. ### 用户态 汇编语言，访问系统调用地址
+
+   你没看错，就是 “汇编语言” ， 这就是为什么你的程序从来没有直接访问系统调用的原因，除非你愿意自己用汇编语言去写接口。所以，这些系统调用都是 程序库 用汇编写好，然后你只需要调用 程序库 就可以了。
+
+   修改 **user/usys.pl** 文件，加入新的系统调用，这个文件会负责生成对应的 汇编代码。
+
+   
+
+[点击这里查看--代码修改](https://github.com/hitsz-ids/tutorial/commit/6f5281da06c6672ab3307da83f7ea9648a0a62db)
+
+[点击这里查看--生成的汇编代码](https://github.com/hitsz-ids/tutorial/blob/6f5281da06c6672ab3307da83f7ea9648a0a62db/Chapter08/XV6/user/usys.S)
+
+![](08.png)
+
+
+
+[点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/cd012734ab957440ebad8253ffad61a56fb43e3f/Chapter08/XV6/user/usys.pl)
+
+[点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/6f5281da06c6672ab3307da83f7ea9648a0a62db/Chapter08/XV6/user/usys.pl)
+
+
+
+2. ### 用户态 提供 C语言接口
+
+通过汇编访问系统调用，然后提供一个 C语言 接口，方便你的 C语言程序 可以使用。你平时用的 printf、malloc、read、write 全是 C语言接口。
+
+
+
+修改 **user/user.h** 文件，加入 C语言接口 定义
+
+
+
+[点击这里查看--代码修改](https://github.com/hitsz-ids/tutorial/commit/e483f1cf6dac98f243386641b704b8ef1712f25f)
+
+![](09.png)
+
+
+
+[点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/fc3dea82c1d27ca3f1fe565ccbde0c472c6347f0/Chapter08/XV6/user/user.h)
+
+[点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/e483f1cf6dac98f243386641b704b8ef1712f25f/Chapter08/XV6/user/user.h)
+
+
+
+### 五、写一个用户程序来调用 线程操作
 
 
 
 
+
+
+
+ 
