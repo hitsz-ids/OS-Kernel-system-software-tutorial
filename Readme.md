@@ -9,7 +9,9 @@
 2. 我们是远程操作Linux系统，如果你对怎么远程操作Linux不熟悉，请看这个教程快速入门：[MobaXTerm使用教程](https://www.bilibili.com/video/BV12L411a7Ne?p=7)
 3. 我们的实验环境是 Linux 系统，如果你对 Linux 命令不熟悉，请看这个教程快速入门：[Linux快速入门](https://www.bilibili.com/video/BV12L411a7Ne?p=9)
 
+4. 我们使用 Visual Studio Code 来编辑代码，如果你对VSCode不熟悉，请看这个教程快速入门：[VSCode快速入门](https://www.bilibili.com/video/BV1oJ41177Qr)
 
+   
 
 ## 二、实验操作
 
