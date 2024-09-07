@@ -149,9 +149,9 @@
 
 后面所有的实验主要就是 2个 操作：
 
-1. **编辑修改代码：**在 Visual Studio Code 中操作
+1. **编辑修改代码**：在 Visual Studio Code 中操作
 
-2. **运行Linux命令：**在 Terminal 中运行，或者在 MobaXTerm 中运行（两个是一样的，随你喜欢用哪个）
+2. **运行Linux命令**：在 Terminal 中运行，或者在 MobaXTerm 中运行（两个是一样的，随你喜欢用哪个）
 
    
 
