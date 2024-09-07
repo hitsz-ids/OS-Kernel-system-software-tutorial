@@ -11,7 +11,7 @@
 2. 我们是远程操作Linux系统，如果你对怎么远程操作Linux不熟悉，请看这个快速入门教程：[MobaXTerm使用教程](https://www.bilibili.com/video/BV12L411a7Ne?p=7)
 3. 我们的实验环境是 Linux 系统，如果你对 Linux 命令不熟悉，请看这个快速入门教程：[Linux快速入门](https://www.bilibili.com/video/BV12L411a7Ne?p=9)
 
-4. 我们使用 Visual Studio Code 来编辑代码，如果你对VSCode不熟悉，请看这个快速入门教程：[VSCode快速入门](https://www.bilibili.com/video/BV1oJ41177Qr)
+4. 我们使用 Visual Studio Code 来编辑代码，如果你对 VSCode 不熟悉，请看这个快速入门教程：[VSCode快速入门](https://www.bilibili.com/video/BV1oJ41177Qr)
 
    
 
@@ -21,7 +21,7 @@
 
 本文档适用 Windows 10 及以上版本的操作系统
 
-本文档是**新手入门指南，熟悉基本的实验环境、实验操作**，熟悉以后更多实验具体内容请看  [课程官方实验文档](https://os-labs.pages.dev/) 
+本文档是  **新手入门指南，熟悉基本的实验环境、实验操作**，熟悉以后更多实验具体内容请看  [课程官方实验文档](https://os-labs.pages.dev/) 
 
 
 
