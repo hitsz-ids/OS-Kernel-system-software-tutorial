@@ -8,6 +8,8 @@
 
 
 
+
+
 ## 一、修改内核进程管理结构，支持进程共享资源
 
 
@@ -30,6 +32,8 @@ int is_thread;               // Flag to indicate whether this is a thread or pro
 
 
 ![](01.png)
+
+
 
 
 
@@ -64,4 +68,73 @@ int  thread_join(int pid)
 ![](02.png)
 
 
+
+
+
+## 三、把线程功能封装为 系统调用 
+
+
+
+操作系统的 **内核态**、**用户态** 是严格分离的，**用户程序不能访问 内核功能 **（如果强行访问内核地址，程序就会被杀掉，就是大家平时见到的，程序访问地址非法，系统已经结束程序运行，或者在 Linux 中称为 Segment Fault ）。所以我们前面增加的内核功能 thread_create、thread_exit、thread_join 只能被内核自己调用，无法提供给用户程序使用。
+
+
+
+要让内核功能被用户程序使用，唯一的方法就是把内核功能 **封装成系统调用** 提供给普通用户使用。类似我们常见的 读写文件 fread，fwrite 一样，这都是系统调用。**接下来，我们把内核通过封装为系统调用**。
+
+
+
+1. 在 **kernel/syscall.h** 中定义三个新的系统调用：
+
+
+
+[点击这里查看--代码修改](https://github.com/hitsz-ids/tutorial/commit/69b53990c887887b41a69a3d63eccd63336970dc)
+
+```
+#define SYS_thread_create 22
+#define SYS_thread_exit   23
+#define SYS_thread_join   24
+```
+
+[点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/952aed940b1992878db44c7b3f8f0baf98b130a9/Chapter08/XV6/kernel/syscall.h)
+[点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/69b53990c887887b41a69a3d63eccd63336970dc/Chapter08/XV6/kernel/syscall.h)
+
+![](03.png)
+
+
+
+
+
+2. 在 **kernel/defs.h** 中加入之前定义的三个函数，为了后面的调用：
+
+   
+
+   [点击这里查看--代码修改](https://github.com/hitsz-ids/tutorial/commit/b2c0325d6ef55fb6372fe8409abd35e5a9fff29b)
+
+   ```
+   int             thread_create(void (*start_routine)(void*), void *arg, void *stack);
+   void            thread_exit(void);
+   int             thread_join(int pid, uint64 addr);
+   ```
+
+   
+
+   [点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/48d0fe8f33fefa766d95811034860427acdd516e/Chapter08/XV6/kernel/defs.h)
+   [点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/b2c0325d6ef55fb6372fe8409abd35e5a9fff29b/Chapter08/XV6/kernel/defs.h)
+
+   
+
+   ![](04.png)
+
+   
+
+3. 在 **kernel/sysproc.c** 中实现系统调用，调用内核功能：
+
+
+
+点击这里查看--代码修改
+
+
+
+点击这里查看--原始代码
+点击这里查看--修改后的代码
 
