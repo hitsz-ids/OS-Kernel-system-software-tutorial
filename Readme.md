@@ -19,9 +19,9 @@
 
 
 
-本文档适用于 Windows 10 及以上版本的操作系统
+本文档适用 Windows 10 及以上版本的操作系统
 
-如果你是别的系统（例如 苹果 MacOS 系统）那你需要参考 [课程官方实验文档](https://os-labs.pages.dev/) 自行配置环境了
+本文档是**新手入门指南，熟悉基本的实验环境、实验操作**，熟悉以后更多实验具体内容请看  [课程官方实验文档](https://os-labs.pages.dev/) 
 
 
 
@@ -38,4 +38,6 @@
 [Chapter06：Lab4：页表](Chapter06/Chapter06.md)
 
 [Chapter07：Lab5：基于FUSE的青春版EXT2文件系统](Chapter07/Chapter07.md)
+
+[Chapter08：扩展实验：给XV6增加多线程支持](Chapter08/Chapter08.md)
 
