@@ -19,6 +19,12 @@
 
 
 
+本文档适用于 Windows 10 及以上版本的操作系统
+
+如果你是别的系统（例如 苹果 MacOS 系统）那你需要参考 [课程官方实验文档](https://os-labs.pages.dev/) 自行配置环境了
+
+
+
 [Chapter01：远程实验环境的使用/下载XV6代码](Chapter01/Chapter01.md)
 
 [Chapter02：Visual Studio Code 查看远程 XV6 代码](Chapter02/Chapter02.md)
