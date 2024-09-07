@@ -96,6 +96,7 @@ int  thread_join(int pid)
 ```
 
 [点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/952aed940b1992878db44c7b3f8f0baf98b130a9/Chapter08/XV6/kernel/syscall.h)
+
 [点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/69b53990c887887b41a69a3d63eccd63336970dc/Chapter08/XV6/kernel/syscall.h)
 
 ![](03.png)
@@ -119,6 +120,7 @@ int  thread_join(int pid)
    
 
    [点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/48d0fe8f33fefa766d95811034860427acdd516e/Chapter08/XV6/kernel/defs.h)
+
    [点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/b2c0325d6ef55fb6372fe8409abd35e5a9fff29b/Chapter08/XV6/kernel/defs.h)
 
    
@@ -136,5 +138,6 @@ int  thread_join(int pid)
 
 
 点击这里查看--原始代码
+
 点击这里查看--修改后的代码
 
