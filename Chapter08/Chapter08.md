@@ -14,7 +14,7 @@
 
 内核进程管理结构在 **kernel/proc.h** 中定义：
 
-点击这里查看--原始代码：
+[点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/54228d7771fccad72096110d3d3f394c1c8e96fa/Chapter08/XV6/kernel/proc.h) 
 
 点击这里查看--我们做的修改
 
