@@ -129,15 +129,78 @@ int  thread_join(int pid)
 
    
 
-3. 在 **kernel/sysproc.c** 中实现系统调用，调用内核功能：
+3. 在 **kernel/sysproc.c** 中实现系统调用，调用内核 thread_xxx 功能：
 
 
 
-点击这里查看--代码修改
+[点击这里查看--代码修改](https://github.com/hitsz-ids/tutorial/commit/bccae776c5446e245e90bbe5a220ddd1b4c8051b)
+
+![](05.png)
 
 
 
-点击这里查看--原始代码
+[点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/1c37ef63c6dab6c40f91a22fbdee5abfa1cf55d5/Chapter08/XV6/kernel/sysproc.c)
 
-点击这里查看--修改后的代码
+[点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/bccae776c5446e245e90bbe5a220ddd1b4c8051b/Chapter08/XV6/kernel/sysproc.c)
+
+
+
+4. 在 **kernel/syscall.c** 中导出系统调用 符号表：
+
+
+
+系统调用提供给用户态程序运行，是通过提供一批 “**符号表**” 来实现的。所谓 “符号表” ， 就是系统调用的 **“函数名” --> "函数地址" 的对应**。用户态程序通过查找符号表中 **sys_thread_create** 名字，得到这个导出**函数的地址**，然后**访问这个地址实现对系统调用的访问**。
+
+
+
+[点击这里查看--代码修改](https://github.com/hitsz-ids/tutorial/commit/2a649c95419b073ddf7b6e5b13fd74f265c9f358)
+
+![](06.png)
+
+
+
+[点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/952aed940b1992878db44c7b3f8f0baf98b130a9/Chapter08/XV6/kernel/syscall.c)
+
+[点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/2a649c95419b073ddf7b6e5b13fd74f265c9f358/Chapter08/XV6/kernel/syscall.c)
+
+
+
+5. 测试内核编译，确保内核编译正确
+
+   
+
+   到现在为止，我们已经完成了  在内核中添加多线程支持，以及提供线程的系统调用给用户程序。现在我们再次编译 XV6 内核，确认之前添加的功能没有出错。
+
+   ```
+   # 编译内核，确认之前添加的代码没有问题
+   
+   make qemu
+   
+   ```
+
+   
+
+![](07.png)
+
+
+
+
+
+## 四、用户态程序库支持新的 系统调用 
+
+理论上，你的用户态程序可以直接访问 **系统调用**， 是的，只是 “**理论上**” 。
+
+
+
+实际上，99% 的程序，都是通过 **程序库** 来访问系统调用的。大家平时用的 printf、malloc、read、write、... 都是被 libc 库封装好的函数，由 libc 库去访问  系统调用，所以**你的程序实际上根本没有直接访问过任何 系统调用**。
+
+
+
+我们这里也延续这个 习俗，**把系统调用封装在 用户态的程序库中**，而你的用户程序只是调用 用户态程序库。
+
+
+
+
+
+
 
