@@ -33,7 +33,7 @@ int is_thread;               // Flag to indicate whether this is a thread or pro
 
 
 
-## 二、内核增加 线程创建、线程等待  功能
+## 二、内核增加 线程创建、线程退出、线程等待  功能
 
 
 
