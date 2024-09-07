@@ -200,11 +200,11 @@ sleep 10
 
 
 
-接下来，你需要根据实验中心的文档，自己完成剩下的实验任务了
+接下来，你需要根据实验文档，自己完成剩下的实验任务了
 
 
 
-[点击这里：查看实验中心文档--XV6与Unix使用程序](https://os-labs.pages.dev/lab1/part1/)
+[点击这里：查看实验文档--XV6与Unix使用程序](https://os-labs.pages.dev/lab1/part1/)
 
 
 
