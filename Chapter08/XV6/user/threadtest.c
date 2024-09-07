@@ -7,11 +7,30 @@
 volatile int count = 0;
 
 // 线程函数
-void thread_func(void *arg) {
-  // 将 arg 从 void* 转换为 uintptr_t，然后转换为 int 进行打印
-  int thread_id = (int)(uintptr_t)arg;
-  // 每个线程会打印 count 的值并递增它
-  printf("Thread %d: count = %d\n", thread_id, ++count);
+void thread_one_func(void *arg) {
+
+  for (int i=0;i<10;i++)    
+    printf("Thread 1: count = %d\n", ++count);
+
+  thread_exit();  // 线程完成工作后退出
+}
+
+// 线程函数
+void thread_two_func(void *arg) {
+
+  for (int i=0;i<10;i++)    
+    printf("Thread 2: count = %d\n", ++count);
+
+  thread_exit();  // 线程完成工作后退出
+}
+
+
+// 线程函数
+void thread_three_func(void *arg) {
+
+  for (int i=0;i<10;i++)    
+    printf("Thread 3: count = %d\n", ++count);
+
   thread_exit();  // 线程完成工作后退出
 }
 
@@ -27,7 +46,7 @@ int main() {
   }
 
   // 创建第一个线程
-  int tid1 = thread_create(thread_func, (void*)(uintptr_t)1, stack1);
+  int tid1 = thread_create(thread_one_func, (void*)(uintptr_t)1, stack1);
   if (tid1 < 0) {
     printf("Failed to create thread 1.\n");
     free(stack1);
@@ -36,8 +55,14 @@ int main() {
     exit(1);
   }
 
+  if (thread_join(tid1, (uint64)&status1) < 0) {
+    printf("Failed to join thread 1.\n");
+  }
+  printf("Parent-Thread 1 Finish\n");
+  printf("Parent-Thread 1 exit status = %d\n", status1);
+
   // 创建第二个线程
-  int tid2 = thread_create(thread_func, (void*)(uintptr_t)2, stack2);
+  int tid2 = thread_create(thread_two_func, (void*)(uintptr_t)2, stack2);
   if (tid2 < 0) {
     printf("Failed to create thread 2.\n");
     free(stack1);
@@ -46,8 +71,14 @@ int main() {
     exit(1);
   }
 
+  if (thread_join(tid2, (uint64)&status2) < 0) {
+    printf("Failed to join thread 2.\n");
+  }
+  printf("Parent-Thread 2 Finish\n");
+  printf("Parent-Thread 2 exit status = %d\n", status2);
+
   // 创建第三个线程
-  int tid3 = thread_create(thread_func, (void*)(uintptr_t)3, stack3);
+  int tid3 = thread_create(thread_three_func, (void*)(uintptr_t)3, stack3);
   if (tid3 < 0) {
     printf("Failed to create thread 3.\n");
     free(stack1);
@@ -56,22 +87,15 @@ int main() {
     exit(1);
   }
 
-  // 等待所有线程完成并获取退出状态
-  if (thread_join(tid1, (uint64)&status1) < 0) {
-    printf("Failed to join thread 1.\n");
-  }
-  if (thread_join(tid2, (uint64)&status2) < 0) {
-    printf("Failed to join thread 2.\n");
-  }
   if (thread_join(tid3, (uint64)&status3) < 0) {
     printf("Failed to join thread 3.\n");
   }
+  
+  printf("Parent-Thread 3 Finish\n");
+  printf("Parent-Thread 3 exit status = %d\n", status3);
 
   printf("All threads finished. Final count = %d\n", count);
-  printf("Thread 1 exit status = %d\n", status1);
-  printf("Thread 2 exit status = %d\n", status2);
-  printf("Thread 3 exit status = %d\n", status3);
-
+  
   // 释放栈内存
   free(stack1);
   free(stack2);
