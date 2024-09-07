@@ -619,3 +619,126 @@ void procdump(void) {
     printf("\n");
   }
 }
+
+
+int thread_create(void (*start_routine)(void*), void *arg, void *stack)
+{
+  int pid;
+  struct proc *np;
+  struct proc *p = myproc();
+
+  // Allocate process.
+  if((np = allocproc()) == 0)
+    return -1;
+
+  // Set up new thread's context.
+  np->pagetable = p->pagetable;  // Share the same address space
+  np->sz = p->sz;                // Shared memory size
+  np->parent = p;
+  np->is_thread = 1;             // Mark as thread
+  np->cwd = idup(p->cwd);        // Share current directory
+  for(int i = 0; i < NOFILE; i++)
+    if(p->ofile[i])
+      np->ofile[i] = filedup(p->ofile[i]);  // Share file descriptors
+
+  // Assign stack and start routine
+  np->trapframe->epc = (uint64)start_routine;  // Set the instruction pointer to start_routine
+  np->trapframe->sp = (uint64)stack + PGSIZE;  // Assign the new stack
+  np->trapframe->a0 = (uint64)arg;             // Pass argument to the thread
+
+  pid = np->pid;
+
+  // Ready to run.
+  np->state = RUNNABLE;
+  release(&np->lock);
+
+  return pid;
+}
+
+void thread_exit(void) {
+  struct proc *p = myproc();
+  struct proc *parent = p->parent;
+
+  if (p == initproc) panic("init exiting");
+
+  // 关闭所有打开的文件
+  for (int fd = 0; fd < NOFILE; fd++) {
+    if (p->ofile[fd]) {
+      struct file *f = p->ofile[fd];
+      fileclose(f);
+      p->ofile[fd] = 0;
+    }
+  }
+
+  begin_op();
+  iput(p->cwd);
+  end_op();
+  p->cwd = 0;
+
+  acquire(&p->lock);
+
+  // 将子线程分配给init进程
+  reparent(p);
+
+  // 更新线程状态为ZOMBIE
+  p->xstate = 0; // 线程的退出状态，按需设置
+  p->state = ZOMBIE;
+
+  // 唤醒父进程（或父线程）
+  if (parent) {
+    acquire(&parent->lock);
+    wakeup1(parent);
+    release(&parent->lock);
+  }
+
+  release(&p->lock);
+
+  // 调度器切换，永远不会返回
+  sched();
+  panic("zombie thread exit");
+}
+
+
+int thread_join(int pid, uint64 addr) {
+  struct proc *np;
+  int havechild;
+  struct proc *p = myproc();
+
+  acquire(&p->lock);
+
+  for (;;) {
+    havechild = 0;
+    for (np = proc; np < &proc[NPROC]; np++) {
+      // 确保线程属于当前进程
+      if (np->pid == pid && np->parent == p) {
+        acquire(&np->lock);
+        havechild = 1;
+        if (np->state == ZOMBIE) {
+          // 找到一个已退出的线程
+          int xstate = np->xstate;
+          if (addr != 0 && copyout(p->pagetable, addr, (char *)&xstate, sizeof(xstate)) < 0) {
+            release(&np->lock);
+            release(&p->lock);
+            return -1;
+          }
+          freeproc(np);
+          release(&np->lock);
+          release(&p->lock);
+          return pid;
+        }
+        release(&np->lock);
+      }
+    }
+
+    // 如果没有子线程或进程被杀死，则返回
+    if (!havechild || p->killed) {
+      release(&p->lock);
+      return -1;
+    }
+
+    // 等待线程退出
+    sleep(p, &p->lock);
+  }
+}
+
+
