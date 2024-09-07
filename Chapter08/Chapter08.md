@@ -39,6 +39,10 @@ int is_thread;               // Flag to indicate whether this is a thread or pro
 
 内核进程操作在 **kernel/proc.c** 中，我们增加三个方法：
 
+
+
+点击这里查看--代码修改
+
 ```
 // 线程创建
 int  thread_create(void (*start_routine)(void*), void *arg, void *stack)
@@ -50,6 +54,12 @@ void thread_exit(void)
 int  thread_join(int pid)
 
 ```
+
+[点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/63696fbb703cc847f22f5125140497c3dd4cd395/Chapter08/XV6/kernel/proc.c)
+
+点击这里查看--修改后的代码
+
+
 
 
 
