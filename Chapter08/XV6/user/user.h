@@ -24,6 +24,11 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
+int thread_create(void (*start_routine)(void*), void *arg, void *stack);
+void thread_exit(void);
+int thread_join(int pid, uint64 addr);
+
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
