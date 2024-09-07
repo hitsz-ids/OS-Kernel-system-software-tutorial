@@ -41,7 +41,7 @@ int is_thread;               // Flag to indicate whether this is a thread or pro
 
 
 
-点击这里查看--代码修改
+[点击这里查看--代码修改](https://github.com/hitsz-ids/tutorial/commit/f1bf3caa8dada609c714b331dcdd2cc4abb486ee)
 
 ```
 // 线程创建
@@ -57,9 +57,11 @@ int  thread_join(int pid)
 
 [点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/63696fbb703cc847f22f5125140497c3dd4cd395/Chapter08/XV6/kernel/proc.c)
 
-点击这里查看--修改后的代码
+[点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/76c5864a3ee111812690ce3328cbebe23558b0cb/Chapter08/XV6/kernel/proc.c)
 
 
+
+![](02.png)
 
 
 
