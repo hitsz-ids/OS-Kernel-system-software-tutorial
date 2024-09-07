@@ -69,3 +69,30 @@ uint64 sys_uptime(void) {
   release(&tickslock);
   return xticks;
 }
+
+
+uint64 sys_thread_create(void) {
+  uint64 start_routine;
+  uint64 arg;
+  uint64 stack;
+
+  if(argaddr(0, &start_routine) < 0 || argaddr(1, &arg) < 0 || argaddr(2, &stack) < 0)
+    return -1;
+
+  return thread_create((void (*)(void*))start_routine, (void*)arg, (void*)stack);
+}
+
+uint64 sys_thread_exit(void) {
+  thread_exit();
+  return 0;  // thread_exit never returns
+}
+
+uint64 sys_thread_join(void) {
+  int pid;
+  uint64 addr;
+
+  if(argint(0, &pid) < 0 || argaddr(1, &addr) < 0)
+    return -1;
+
+  return thread_join(pid, addr);
+}
