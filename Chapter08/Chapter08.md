@@ -8,14 +8,48 @@
 
 
 
-# 一、修改内核进程管理结构，支持进程共享资源
+## 一、修改内核进程管理结构，支持进程共享资源
 
 
 
 内核进程管理结构在 **kernel/proc.h** 中定义：
 
+[点击这里查看--代码修改](https://github.com/hitsz-ids/tutorial/commit/20e7a81d735379c05e70166a813b30ba125e1421#diff-9217aa6c10ce4a80f68f3d335a5aac4ffa587639b1e5053becbdf60db11bc9f1)
+
+```
+# 主要增加了这一行代码，用于标明当前 进程  是否为 线程
+
+int is_thread;               // Flag to indicate whether this is a thread or process
+
+```
+
 [点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/54228d7771fccad72096110d3d3f394c1c8e96fa/Chapter08/XV6/kernel/proc.h) 
 
-点击这里查看--我们做的修改
+[点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/20e7a81d735379c05e70166a813b30ba125e1421/Chapter08/XV6/kernel/proc.h)
+
+
 
 ![](01.png)
+
+
+
+## 二、内核增加 线程创建、线程等待  功能
+
+
+
+内核进程操作在 **kernel/proc.c** 中，我们增加三个方法：
+
+```
+// 线程创建
+int  thread_create(void (*start_routine)(void*), void *arg, void *stack)
+
+// 线程退出
+void thread_exit(void)
+
+// 线程等待
+int  thread_join(int pid)
+
+```
+
+
+
