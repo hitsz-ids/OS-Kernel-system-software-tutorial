@@ -114,7 +114,7 @@ ls -lh
 
 
 
-[点这里查看：实验中心文档](https://os-labs.pages.dev/lab1/part3/)
+[点这里查看：实验文档](https://os-labs.pages.dev/lab1/part3/)
 
 
 
