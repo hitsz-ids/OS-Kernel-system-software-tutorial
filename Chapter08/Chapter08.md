@@ -83,7 +83,7 @@ int  thread_join(int pid)
 
 
 
-1. 在 **kernel/syscall.h** 中定义三个新的系统调用：
+1. ### 在 **kernel/syscall.h** 中定义三个新的系统调用
 
 
 
@@ -105,7 +105,7 @@ int  thread_join(int pid)
 
 
 
-2. 在 **kernel/defs.h** 中加入之前定义的三个函数，为了后面的调用：
+2. ### 在 **kernel/defs.h** 中加入之前定义的三个函数，为了后面的调用
 
    
 
@@ -129,7 +129,7 @@ int  thread_join(int pid)
 
    
 
-3. 在 **kernel/sysproc.c** 中实现系统调用，调用内核 thread_xxx 功能：
+3. ### 在 **kernel/sysproc.c** 中实现系统调用，调用内核 thread_xxx 功能
 
 
 
@@ -145,7 +145,7 @@ int  thread_join(int pid)
 
 
 
-4. 在 **kernel/syscall.c** 中导出系统调用 符号表：
+4. ### 在 **kernel/syscall.c** 中导出系统调用 符号表：
 
 
 
@@ -165,7 +165,7 @@ int  thread_join(int pid)
 
 
 
-5. 测试内核编译，确保内核编译正确
+5. ### 测试内核编译，确保内核编译正确
 
    
 
