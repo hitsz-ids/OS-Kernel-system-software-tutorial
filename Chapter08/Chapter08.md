@@ -8,6 +8,10 @@
 
 
 
+[点击这里下载--本章节修改过的代码](XV6.zip)
+
+[点击这里下载--完整多线程XV6系统代码（包括整个 XV6 + 我们修改过的代码）](xv6-full.tar.bz2)
+
 
 
 ## 一、修改内核进程管理结构，支持进程共享资源
@@ -75,7 +79,7 @@ int  thread_join(int pid)
 
 
 
-操作系统的 **内核态**、**用户态** 是严格分离的，**用户程序不能访问 内核功能 **（如果强行访问内核地址，程序就会被杀掉，就是大家平时见到的，程序访问地址非法，系统已经结束程序运行，或者在 Linux 中称为 Segment Fault ）。所以我们前面增加的内核功能 thread_create、thread_exit、thread_join 只能被内核自己调用，无法提供给用户程序使用。
+操作系统的 **内核态**、**用户态** 是严格分离的，**用户程序不能访问内核功能 **（如果强行访问内核地址，程序就会被杀掉，就是大家平时见到的，程序访问地址非法，系统已经结束程序运行，或者在 Linux 中称为 Segment Fault ）。所以我们前面增加的内核功能 thread_create、thread_exit、thread_join 只能被内核自己调用，无法提供给用户程序使用。
 
 
 
@@ -83,7 +87,7 @@ int  thread_join(int pid)
 
 
 
-1. ### 在 **kernel/syscall.h** 中定义三个新的系统调用
+### （1）在 **kernel/syscall.h** 中定义三个新的系统调用
 
 
 
@@ -105,31 +109,31 @@ int  thread_join(int pid)
 
 
 
-2. ### 在 **kernel/defs.h** 中加入之前定义的三个函数，为了后面的调用
+### （2）在 **kernel/defs.h** 中加入之前定义的三个函数，为了后面的调用
 
-   
 
-   [点击这里查看--代码修改](https://github.com/hitsz-ids/tutorial/commit/b2c0325d6ef55fb6372fe8409abd35e5a9fff29b)
 
-   ```
-   int             thread_create(void (*start_routine)(void*), void *arg, void *stack);
-   void            thread_exit(void);
-   int             thread_join(int pid, uint64 addr);
-   ```
+[点击这里查看--代码修改](https://github.com/hitsz-ids/tutorial/commit/b2c0325d6ef55fb6372fe8409abd35e5a9fff29b)
 
-   
+```
+int             thread_create(void (*start_routine)(void*), void *arg, void *stack);
+void            thread_exit(void);
+int             thread_join(int pid, uint64 addr);
+```
 
-   [点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/48d0fe8f33fefa766d95811034860427acdd516e/Chapter08/XV6/kernel/defs.h)
 
-   [点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/b2c0325d6ef55fb6372fe8409abd35e5a9fff29b/Chapter08/XV6/kernel/defs.h)
 
-   
+[点击这里查看--原始代码](https://github.com/hitsz-ids/tutorial/blob/48d0fe8f33fefa766d95811034860427acdd516e/Chapter08/XV6/kernel/defs.h)
 
-   ![](04.png)
+[点击这里查看--修改后的代码](https://github.com/hitsz-ids/tutorial/blob/b2c0325d6ef55fb6372fe8409abd35e5a9fff29b/Chapter08/XV6/kernel/defs.h)
 
-   
 
-3. ### 在 **kernel/sysproc.c** 中实现系统调用，调用内核 thread_xxx 功能
+
+![](04.png)
+
+
+
+### （3）在 **kernel/sysproc.c** 中实现系统调用，调用内核 thread_xxx 功能
 
 
 
@@ -145,7 +149,7 @@ int  thread_join(int pid)
 
 
 
-4. ### 在 **kernel/syscall.c** 中导出系统调用 符号表：
+### （4）在 **kernel/syscall.c** 中导出系统调用 符号表：
 
 
 
@@ -165,20 +169,20 @@ int  thread_join(int pid)
 
 
 
-5. ### 测试内核编译，确保内核编译正确
+### （5）测试内核编译，确保内核编译正确
 
-   
 
-   到现在为止，我们已经完成了  在内核中添加多线程支持，以及提供线程的系统调用给用户程序。现在我们再次编译 XV6 内核，确认之前添加的功能没有出错。
 
-   ```
-   # 编译内核，确认之前添加的代码没有问题
-   
-   make qemu
-   
-   ```
+到现在为止，我们已经完成了  在内核中添加多线程支持，以及提供线程的系统调用给用户程序。现在我们再次编译 XV6 内核，确认之前添加的功能没有出错。
 
-   
+```
+# 编译内核，确认之前添加的代码没有问题
+
+make qemu
+
+```
+
+
 
 ![](07.png)
 
@@ -200,13 +204,13 @@ int  thread_join(int pid)
 
 
 
-1. ### 用户态 汇编语言，访问系统调用地址
+### （1）用户态 汇编语言，访问系统调用地址
 
-   你没看错，就是 “汇编语言” ， 这就是为什么你的程序从来没有直接访问系统调用的原因，除非你愿意自己用汇编语言去写接口。所以，这些系统调用都是 程序库 用汇编写好，然后你只需要调用 程序库 就可以了。
+你没看错，就是 “汇编语言” ， 这就是为什么你的程序从来没有直接访问系统调用的原因，除非你愿意自己用汇编语言去写接口。所以，这些系统调用都是 程序库 用汇编写好，然后你只需要调用 程序库 就可以了。
 
-   修改 **user/usys.pl** 文件，加入新的系统调用，这个文件会负责生成对应的 汇编代码。
+修改 **user/usys.pl** 文件，加入新的系统调用，这个文件会负责生成对应的 汇编代码。
 
-   
+
 
 [点击这里查看--代码修改](https://github.com/hitsz-ids/tutorial/commit/6f5281da06c6672ab3307da83f7ea9648a0a62db)
 
@@ -222,7 +226,7 @@ int  thread_join(int pid)
 
 
 
-2. ### 用户态 提供 C语言接口
+### （2）用户态 提供 C语言接口
 
 通过汇编访问系统调用，然后提供一个 C语言 接口，方便你的 C语言程序 可以使用。你平时用的 printf、malloc、read、write 全是 C语言接口。
 
@@ -244,18 +248,114 @@ int  thread_join(int pid)
 
 
 
-### 五、写一个用户程序来调用 线程操作
+## 五、写一个用户程序来调用 线程操作
 
 
 
-我们写一个 **user/threadtest.c** 程序用来测试多线程的功能是否正确。
+### （1）写一个 **user/threadtest.c** 程序用来测试多线程的功能是否正确。
 
-**注意**：这是一个用户态的程序，所以我们需要**把它放在  user 目录下**，参考之前的教程  [XV6与Unix实用程序](../Chapter03/Chapter03.md)
+**注意**：这是一个用户态的程序，所以我们需要**把它放在  user 目录下**，参考之前的教程  [XV6与Unix实用程序Sleep实验](../Chapter03/Chapter03.md)
 
 
 
  [点击查看：user/threadtest.c 程序](XV6/user/threadtest.c)
 
+![](10.png)
 
 
-六、程序
+
+### （2）把 threadtest.c 加入 Makefile 编译 
+
+
+
+[点击查看--Makefile代码](XV6/Makefile)
+
+![](11.png)
+
+
+
+### （3）编译 XV6内核 + 用户态程序
+
+
+
+```
+# 编译 内核 + 用户态 程序
+make qemu 
+```
+
+![](12.png)
+
+
+
+### （4）运行多线程程序 
+
+```
+# 运行多线程程序
+threadtest
+
+```
+
+![](13.png)
+
+
+
+## 六、多线程实现说明
+
+
+
+### （1）共享内存实现 
+
+真正的多线程，应该是共享内存的。10个线程，共享同一个进程的内存空间。但是，**我们目前没有实现共享内存**。
+
+没实现的原因：
+
+- 多个线程共享内存，每个线程退出都会 “释放内存” ，这时候需要对内存做使用**计数**，释放其实是**减计数**，等**计数为零**的时候，才真正的释放内存。
+- XV6 内存管理没有实现 “计数”。他每个进程都复制所有内存，这样每个进程释放内存都是释放自己的，不需要计数。
+- 如果要实现共享内存，就需要我们大幅修改内存代码，自己实现引用计数，包括共享页表、共享文件都要计数，工作量太大了。
+
+
+
+### （2）设备访问互斥  
+
+多个线程同时访问设备，比如打印输出到屏幕，需要实现 **设备锁**、**互斥访问**。不然就会几个线程打印的内容相互穿插。如下
+
+线程1 ： printf("AAAAAAA")
+
+线程2：  printf("BBBBBBB")
+
+正常多线程打印结果应该是
+
+```
+AAAAAAA
+BBBBBBB
+```
+
+目前多线程**没有实现** **设备锁**，**互斥访问**，所以多线程同时运行，打印会出现如下情况：
+
+```
+AABABBBBAABBBA          两个线程打印的东西相互穿插，混在一起了，这是因为没有实现  设备锁、互斥访问
+```
+
+
+
+### （3）父进程等待多个子进程
+
+一个程序生成几十个线程，一般都会需要有一个功能，一次等所有线程结束再退出，如下：
+
+```
+// 生成 20个线程
+for(int i=0; i < 20; i++)
+    thread_create(....)
+    
+// 等待所有线程退出
+wait_for_all()
+
+```
+
+目前我们没有这个功能，我们只能一个一个等线程退出，没法批量等
+
+
+
+### （4）总结
+
+XV6 是一个教学系统，为了保证它的小巧可读，很多现代操作系统的功能并没有实现。如果需要实现真正意义上的多线程，需要大幅修改整个系统的代码。这个工作就留给大家自己练手了。
