@@ -2,7 +2,7 @@
 
 
 
-[点击这里：查看实验中心文档--XV6与Unix使用程序](https://os-labs.pages.dev/lab1/part1/)
+[点击这里：查看实验文档--XV6与Unix使用程序](https://os-labs.pages.dev/lab1/part1/)
 
 
 
