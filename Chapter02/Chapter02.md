@@ -6,7 +6,7 @@
 
 
 
-[实验平台教程：远程 Visual Studio Code 使用](https://os-labs.pages.dev/remote_env/)
+[实验文档：远程 Visual Studio Code 使用](https://os-labs.pages.dev/remote_env/)
 
 
 

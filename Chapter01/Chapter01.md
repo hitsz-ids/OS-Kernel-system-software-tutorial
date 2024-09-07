@@ -8,7 +8,7 @@
 
 
 
-[看这里：远程实验环境详细说明](https://os-labs.pages.dev/)
+[实验文档：远程实验环境详细说明](https://os-labs.pages.dev/)
 
 ```bash
 远程实验环境为 Linux 系统，需要通过远程SSH方式登录到 Linux 服务器去操作
