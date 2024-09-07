@@ -619,3 +619,67 @@ void procdump(void) {
     printf("\n");
   }
 }
+
+
+int thread_create(void (*start_routine)(void*), void *arg, void *stack)
+{
+  int i, pid;
+  struct proc *np;
+  struct proc *p = myproc();
+
+  // Allocate process.
+  if ((np = allocproc()) == 0) {
+    return -1;
+  }
+
+  // 标记为这是一个线程 
+  np->is_thread = 1;
+
+  // TODO: 现在简单复制所有内存，将来再考虑实现共享内存
+  // 共享内存，需要对内存结构大规模修改，实现 “计数”， 多个线程共用同一块内存
+  // 计数内存使用，只有所有使用这块内存的线程都退出了，才可以释放这块内存
+  // 内存计数实现起来太麻烦了，我们先不实现了
+  if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
+    freeproc(np);
+    release(&np->lock);
+    return -1;
+  }
+  np->sz = p->sz;
+
+  np->parent = p;
+
+  // copy saved user registers.
+  *(np->trapframe) = *(p->trapframe);
+
+  // 设置线程从 start_routine 开始执行，也就是线程指定的 执行函数
+  np->trapframe->epc = (uint64)start_routine;
+  // 简化操作，我们不传递函数参数了
+  np->trapframe->a0 = 0;  
+
+  // increment reference counts on open file descriptors.
+  for (i = 0; i < NOFILE; i++)
+    if (p->ofile[i]) np->ofile[i] = filedup(p->ofile[i]);
+  np->cwd = idup(p->cwd);
+
+  safestrcpy(np->name, p->name, sizeof(p->name));
+
+  pid = np->pid;
+
+  np->state = RUNNABLE;
+
+  release(&np->lock);
+
+  return pid;
+}
+
+// 直接调用 exit，我们不实现线程的这个功能
+void thread_exit(void) {
+  exit(0);
+}
+
+// 直接调用 wait，我们不实现线程的这个功能
+int thread_join(int pid, uint64 addr) {
+  return wait(addr);
+}
+
+
