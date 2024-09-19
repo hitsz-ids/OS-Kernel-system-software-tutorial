@@ -14,7 +14,13 @@
 
 [点击这里下载--完整多线程XV6系统代码（包括整个 XV6 + 我们修改过的代码）](xv6-full.tar.bz2)
 
+## 0、环境搭建
 
+xv6 需要依赖两个工具，即： GCC/Binutils 和 QEMU
+
+需要注意的是，这两个工具都需要是 RISC-V 版本的，因为 xv6 是依赖 RISC-V 指令集架构的
+以下链接给出一个tutorial，如何在Linux host中搭建编译、调试xv6-riscv OS kernel的实验环境：
+https://zhuanlan.zhihu.com/p/509296983
 
 ## 一、系统架构
 
