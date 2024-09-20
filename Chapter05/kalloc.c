@@ -96,17 +96,10 @@ kfree(void *pa)
   release(&(kmem[cpu_index].lock));
 }
 
-// Allocate one 4096-byte page of physical memory.
-// Returns a pointer that the kernel can use.
-// Returns 0 if the memory cannot be allocated.
-// 从对应CPU的链链表分配内存
-void *
-kalloc(void)
+// 从指定的CPU分配内存
+void* __kalloc(int cpu_index)
 {
   struct run *r;
-
-  // 获取当前CPU
-  int cpu_index = cpuid();
 
   acquire(&(kmem[cpu_index].lock));
   r = kmem[cpu_index].freelist;
@@ -117,4 +110,40 @@ kalloc(void)
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
+}
+
+
+void *
+kalloc(void)
+{
+  void *r;
+
+  // 获取当前CPU
+  int cpu_id = cpuid();
+
+  // 先从自己的 CPU 分配内存
+  r = __kalloc(cpu_id);
+
+  // 内存分配成功，返回
+  if(r != (void*)0){
+    return r;
+  }
+
+  // 内存分配失败，尝试从别的CPU分配内存
+  for(int cpu_index =0; cpu_index < NCPU; cpu_index++){
+    // 自己分配已经失败了，跳过自己
+    if(cpu_index == cpu_id){
+      continue;
+    }
+
+    // 从别的 CPU 分配内存
+    r = __kalloc(cpu_index);
+    if(r != (void*)0){
+      return r;
+    }
+
+  }
+  
+  // 分配内存失败
+  return (void*)0;
 }
