@@ -101,6 +101,10 @@ kalloctest
 
    （5）kalloctest **读取内核的 statistics 数据**，**并且打印出来**，让你可以看到内核锁的使用情况
 
+   （6）kalloctest 开始获取一次 锁失败次数， 然后 fork 进程，结束再获取一次 锁失败次数，如果**两次差值 < 10 就算测试通过**
+
+   ​	 意思是 fork 的进程经过 10万次内存申请释放，失败次数不到10次，说明内存锁的效率很高
+
    
 
 3. ### kalloctest 打印数据的解释
@@ -124,6 +128,25 @@ kalloctest
    lock: bcache: #fetch-and-add 0 #acquire() 340
    文件缓存锁，请求 340 次，失败 0 次
    
+   ```
+
+   ```
+   --- top 5 contended locks:
+   lock: kmem: #fetch-and-add 41021 #acquire() 433016
+   lock: proc: #fetch-and-add 22436 #acquire() 116501
+   lock: virtio_disk: #fetch-and-add 8424 #acquire() 57
+   lock: proc: #fetch-and-add 5528 #acquire() 116579
+   lock: proc: #fetch-and-add 3416 #acquire() 116579
+   tot= 41021
+   
+   tot 就是 lock: kmem 的失败次数
+   
+   kalloctest 使用 tot 的两次差值来判断是否通过测试，差值 < 10 就算通过
+   
+   1. 开始前，获取一次 tot
+   2. fork 两个进程，同时10万次分配内存、释放内存
+   3. 结束，获取一次 tot
+   4. 两次 toto 差值小于 10 ，就算通过，说明 分配10万次内存，锁失败不到10次
    
    ```
 
