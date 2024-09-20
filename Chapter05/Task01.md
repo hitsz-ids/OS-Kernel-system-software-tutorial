@@ -22,6 +22,16 @@ XV6的内存分配器**只有一个内存链表供多个CPU核使用**。在使�
 
 ![](kalloc_proc.jpg)
 
+## 代码下载
+
+[点击下载--单文件 kalloc.c 文件](https://github.com/hitsz-ids/OS-Kernel-system-software-tutorial/blob/4be0a66d8bcacb297e6864e02422765c1e8ccfa7/Chapter05/kalloc.c) 
+
+
+
+[点击下载--完整代码包](xv6-kmem.tar.bz2)
+
+
+
 ## 一、每个CPU一个内存链
 
 首先，仔细阅读 **kernel/kalloc.c** 的代码，看明白：
@@ -178,7 +188,7 @@ kalloctest
 
 
 
-​		点击这里--查看代码修改
+​		[点击这里--查看代码修改](https://github.com/hitsz-ids/OS-Kernel-system-software-tutorial/commit/4be0a66d8bcacb297e6864e02422765c1e8ccfa7)
 
 
 
