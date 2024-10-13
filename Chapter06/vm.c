@@ -243,9 +243,34 @@ void freewalk(pagetable_t pagetable) {
   kfree((void *)pagetable);
 }
 
-// 定义我们自己的 vmprint 方法
+// 把地址用 16 进制打印出来
+static void print_addr(uint64 x) {
+  static char digits[] = "0123456789abcdef";
+  char buf[16];
+  int base = 16;
+  int i;
+  // 把 buf 全写上 '0'
+  for(i=0; i<16;i++){
+    buf[i] = '0';
+  }
+  // 转为16进制显示
+  i = 15;
+  do {
+    buf[i] = digits[x % base];
+  } while (--i>=0 && (x /= base) != 0);
+  // 打印16位地址
+  consputc('0');
+  consputc('x');
+  for(i=0; i<16;i++){
+    consputc(buf[i]);
+  }
+}
+
+// 打印页表结构
 void vmprint(pagetable_t pagetable){
-  printf("This is my vmprint,HaHaHa\n");
+  printf("page table ");
+  print_addr((uint64)pagetable);
+  printf("\n"); 
 }
 
 // Free user memory pages,
