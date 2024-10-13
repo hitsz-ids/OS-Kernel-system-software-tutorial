@@ -243,12 +243,6 @@ void freewalk(pagetable_t pagetable) {
   kfree((void *)pagetable);
 }
 
-// 定义我们自己的 vmprint 方法
-void vmprint(pagetable_t pgtbl, int level){
-  printf("This is my vmprint,HaHaHa\n");
-}
-
-
 // Free user memory pages,
 // then free page-table pages.
 void uvmfree(pagetable_t pagetable, uint64 sz) {
