@@ -97,12 +97,6 @@ int exec(char *path, char **argv) {
   p->trapframe->sp = sp;          // initial stack pointer
   proc_freepagetable(oldpagetable, oldsz);
 
-  // 调用vmprint，打印第一个进程的页表
-  if (1 == p->pid){
-    // 页表一共3级，2 代表根页表，1是一级页表，0是叶子页表
-    vmprint(p->pagetable, 2);
-  }
-
   return argc;  // this ends up in a0, the first argument to main(argc, argv)
 
 bad:
