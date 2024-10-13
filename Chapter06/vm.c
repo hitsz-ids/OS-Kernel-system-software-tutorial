@@ -266,11 +266,70 @@ static void print_addr(uint64 x) {
   }
 }
 
-// 打印页表结构
+// 打印页表项
+static void print_pte(int level, int idx, uint64 va, pte_t pte){
+  //打印层级标识
+  for(int j=3-level; j>0;){
+    printf("||");
+    if(--j>0){
+      printf(" ");
+    }
+  }
+  // 打印索引
+  printf("idx: %d:", idx);
+
+  if(0==level){
+    // 叶子结点打印虚拟地址
+    printf(" va:");
+    print_addr(va);
+    printf(" -> ");
+  }
+
+  printf(" pa:");
+  print_addr(PTE2PA(pte));
+
+  if(level >0){
+    printf(", flags: ----");
+  }else{
+    // 打印标志
+    printf(", flags: ");
+    if (pte & PTE_R) printf("r"); else printf("-");
+    if (pte & PTE_W) printf("w"); else printf("-");
+    if (pte & PTE_X) printf("x"); else printf("-");
+    if (pte & PTE_U) printf("u"); else printf("-");
+  }
+
+  printf("\n");
+}
+
+// 递归打印页表结构
+static void print_pagetable(pagetable_t pagetable, int level, uint64 va){
+  // there are 2^9 = 512 PTEs in a page table.
+  for (int i = 0; i < 512; i++) {
+    pte_t pte = pagetable[i];    
+    if ((pte & PTE_V) && (pte & (PTE_R | PTE_W | PTE_X)) == 0) {      
+      // 根页表、次页表      
+      uint64 new_va = va + (i <<(12 + 9*level)); // 计算虚拟地址
+      print_pte(level, i, new_va, pte);
+      uint64 child = PTE2PA(pte);
+      if (level > 0){
+        // 递归打印下一级页表结构
+        print_pagetable((pagetable_t)child, level-1, new_va);      
+      }
+    }else if (pte & PTE_V) {
+      uint64 new_va = va + (i <<(12 + 9*level)); // 计算虚拟地址
+      print_pte(level, i, new_va, pte);
+    }
+  }
+}
+
 void vmprint(pagetable_t pagetable){
+
   printf("page table ");
   print_addr((uint64)pagetable);
-  printf("\n"); 
+  printf("\n");
+
+  print_pagetable(pagetable, 2, 0);
 }
 
 // Free user memory pages,
