@@ -111,6 +111,21 @@ found:
     return 0;
   }
 
+  // 内核态页表
+  p->kpagetable = (pagetable_t)kalloc();
+  if (p->kpagetable == 0) {
+    freeproc(p);
+    release(&p->lock);
+    return 0;
+  }
+  // 先把页表清零
+  memset(p->kpagetable, 0, PGSIZE);
+  // 从全局内核页表复制过来（副本）
+  extern pagetable_t kernel_pagetable;
+  for (int i = 0; i < 512; i++) {
+    p->kpagetable[i] = kernel_pagetable[i];
+  }
+
   // Set up new context to start executing at forkret,
   // which returns to user space.
   memset(&p->context, 0, sizeof(p->context));
@@ -127,6 +142,7 @@ static void freeproc(struct proc *p) {
   if (p->trapframe) kfree((void *)p->trapframe);
   p->trapframe = 0;
   if (p->pagetable) proc_freepagetable(p->pagetable, p->sz);
+  if (p->kpagetable) kfree(p->kpagetable);
   p->pagetable = 0;
   p->sz = 0;
   p->pid = 0;
