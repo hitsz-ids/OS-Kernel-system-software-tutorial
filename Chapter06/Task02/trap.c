@@ -85,7 +85,11 @@ void usertrapret(void) {
 
   // set up trapframe values that uservec will need when
   // the process next re-enters the kernel.
+
+  w_satp(MAKE_SATP(p->kpagetable));   //进程使用自己的内核页表
+  sfence_vma();                       //刷新页表缓存
   p->trapframe->kernel_satp = r_satp();          // kernel page table
+
   p->trapframe->kernel_sp = p->kstack + PGSIZE;  // process's kernel stack
   p->trapframe->kernel_trap = (uint64)usertrap;
   p->trapframe->kernel_hartid = r_tp();  // hartid for cpuid()
