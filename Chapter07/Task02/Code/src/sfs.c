@@ -1,5 +1,6 @@
 #define _XOPEN_SOURCE 700
 #include "../include/sfs.h"
+#include "pwd.h"
 /******************************************************************************
 * SECTION: Macro
 *******************************************************************************/
@@ -123,11 +124,11 @@ int sfs_getattr(const char* path, struct stat * sfs_stat) {
 	sfs_stat->st_gid 	 = getgid();
 	sfs_stat->st_atime   = time(NULL);
 	sfs_stat->st_mtime   = time(NULL);
-	sfs_stat->st_blksize = SFS_IO_SZ();
+	sfs_stat->st_blksize = SFS_BLK_SZ();
 
 	if (is_root) {
 		sfs_stat->st_size	= sfs_super.sz_usage; 
-		sfs_stat->st_blocks = SFS_DISK_SZ() / SFS_IO_SZ();
+		sfs_stat->st_blocks = SFS_DISK_SZ() / SFS_BLK_SZ();
 		sfs_stat->st_nlink  = 2;		/* !特殊，根目录link数为2 */
 	}
 	return SFS_ERROR_NONE;
@@ -514,12 +515,17 @@ void sfs_usage() {
 /******************************************************************************
 * SECTION: FS Specific Structure
 *******************************************************************************/
+#define DEVICE_NAME "ddriver"
+
 int main(int argc, char **argv)
 {
     int ret;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-	sfs_options.device = strdup("/dev/ddriver");
+    // 打开驱动
+    char device_path[128] = {0};
+    sprintf(device_path, "%s/" DEVICE_NAME, getpwuid(getuid())->pw_dir);
+	sfs_options.device = strdup(device_path);
 
 	if (fuse_opt_parse(&args, &sfs_options, option_spec, NULL) == -1)
 		return -SFS_ERROR_INVAL;

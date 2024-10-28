@@ -156,14 +156,18 @@ struct sfs_inode* sfs_alloc_inode(struct sfs_dentry * dentry) {
     int byte_cursor = 0; 
     int bit_cursor  = 0; 
     int ino_cursor  = 0;
+    int dno_cursor  = 0;
     boolean is_find_free_entry = FALSE;
-
+       
+    // 寻找一个空闲的 Inode
     for (byte_cursor = 0; byte_cursor < SFS_BLKS_SZ(sfs_super.map_inode_blks); 
          byte_cursor++)
     {
+        
         for (bit_cursor = 0; bit_cursor < UINT8_BITS; bit_cursor++) {
             if((sfs_super.map_inode[byte_cursor] & (0x1 << bit_cursor)) == 0) {    
                                                       /* 当前ino_cursor位置空闲 */
+                SFS_DBG("Alloc Inode Map byte_cursor[%d] bit_cursor[%d]\n", byte_cursor,0x1 << bit_cursor);
                 sfs_super.map_inode[byte_cursor] |= (0x1 << bit_cursor);
                 is_find_free_entry = TRUE;           
                 break;
@@ -177,7 +181,7 @@ struct sfs_inode* sfs_alloc_inode(struct sfs_dentry * dentry) {
 
     if (!is_find_free_entry || ino_cursor == sfs_super.max_ino)
         return -SFS_ERROR_NOSPACE;
-
+   
     inode = (struct sfs_inode*)malloc(sizeof(struct sfs_inode));
     inode->ino  = ino_cursor; 
     inode->size = 0;
@@ -190,10 +194,38 @@ struct sfs_inode* sfs_alloc_inode(struct sfs_dentry * dentry) {
     inode->dir_cnt = 0;
     inode->dentrys = NULL;
     
+    // 分配数据块，普通文件用于保存文件内容，目录用于保存目录下面的文件名
+
+    is_find_free_entry = FALSE;
+    // 我们寻找一个空闲的 数据块（预先分配磁盘空间，这样可以简化操作）
+    for (byte_cursor = 0; byte_cursor < SFS_BLKS_SZ(sfs_super.map_data_blks); 
+        byte_cursor++)
+    {
+        for (bit_cursor = 0; bit_cursor < UINT8_BITS; bit_cursor++) {
+            if((sfs_super.map_data[byte_cursor] & (0x1 << bit_cursor)) == 0) {    
+                                                    /* 当前ino_cursor位置空闲 */
+                SFS_DBG("Alloc Data Map byte_cursor[%d] bit_cursor[%d]\n", byte_cursor,0x1 << bit_cursor);
+                sfs_super.map_data[byte_cursor] |= (0x1 << bit_cursor);
+                is_find_free_entry = TRUE;           
+                break;
+            }
+            dno_cursor++;
+        }
+        if (is_find_free_entry) {
+            break;
+        }
+    }
+
+    if (!is_find_free_entry)
+        return -SFS_ERROR_NOSPACE;  
+
+    // 记录分配的磁盘数据号
+    inode->dno = dno_cursor;
+
     if (SFS_IS_REG(inode)) {
         inode->data = (uint8_t *)malloc(SFS_BLKS_SZ(SFS_DATA_PER_FILE));
     }
-
+    
     return inode;
 }
 /**
@@ -208,6 +240,8 @@ int sfs_sync_inode(struct sfs_inode * inode) {
     struct sfs_dentry_d dentry_d;
     int ino             = inode->ino;
     inode_d.ino         = ino;
+    int dno             = inode->dno;
+    inode_d.dno         = dno;
     inode_d.size        = inode->size;
     memcpy(inode_d.target_path, inode->target_path, SFS_MAX_FILE_NAME);
     inode_d.ftype       = inode->dentry->ftype;
@@ -221,9 +255,10 @@ int sfs_sync_inode(struct sfs_inode * inode) {
     }
                                                       /* Cycle 1: 写 INODE */
                                                       /* Cycle 2: 写 数据 */
-    if (SFS_IS_DIR(inode)) {                          
+    if (SFS_IS_DIR(inode)) {               
+        // 目录需要把 目录下的 文件名 写入数据块           
         dentry_cursor = inode->dentrys;
-        offset        = SFS_DATA_OFS(ino);
+        offset        = SFS_DATA_OFS(dno);
         while (dentry_cursor != NULL)
         {
             memcpy(dentry_d.fname, dentry_cursor->fname, SFS_MAX_FILE_NAME);
@@ -244,7 +279,8 @@ int sfs_sync_inode(struct sfs_inode * inode) {
         }
     }
     else if (SFS_IS_REG(inode)) {
-        if (sfs_driver_write(SFS_DATA_OFS(ino), inode->data, 
+        // 普通文件需要把数据写入 磁盘数据块 
+        if (sfs_driver_write(SFS_DATA_OFS(dno), inode->data, 
                              SFS_BLKS_SZ(SFS_DATA_PER_FILE)) != SFS_ERROR_NONE) {
             SFS_DBG("[%s] io error\n", __func__);
             return -SFS_ERROR_IO;
@@ -486,9 +522,9 @@ struct sfs_dentry* sfs_lookup(const char * path, boolean* is_find, boolean* is_r
  * @brief 挂载sfs, Layout 如下
  * 
  * Layout
- * | Super | Inode Map | Data |
+ * | Super(1) | Inode Map(1) | DATA Map(1) | INODE(1) | DATA(*) |
  * 
- * IO_SZ = BLK_SZ
+ * BLK_SZ = 2 * IO_SZ
  * 
  * 每个Inode占用一个Blk
  * @param options 
@@ -503,7 +539,8 @@ int sfs_mount(struct custom_options options){
 
     int                 inode_num;
     int                 map_inode_blks;
-    
+    int                 map_data_blks;
+        
     int                 super_blks;
     boolean             is_init = FALSE;
 
@@ -529,45 +566,117 @@ int sfs_mount(struct custom_options options){
                                                       /* 读取super */
     if (sfs_super_d.magic_num != SFS_MAGIC_NUM) {     /* 幻数无 */
                                                       /* 估算各部分大小 */
-        super_blks = SFS_ROUND_UP(sizeof(struct sfs_super_d), SFS_IO_SZ()) / SFS_IO_SZ();
 
-        inode_num  =  SFS_DISK_SZ() / ((SFS_DATA_PER_FILE + SFS_INODE_PER_FILE) * SFS_IO_SZ());
+        /**
+         * 一个设计的简单例子
 
-        map_inode_blks = SFS_ROUND_UP((SFS_ROUND_UP(inode_num, UINT32_BITS) / UINT8_BITS), SFS_IO_SZ()) 
-                         / SFS_IO_SZ();
+            磁盘容量为4MB，逻辑块大小为1024B，那么逻辑块数应该是4MB / 1024B = 4096。
+            我们采用直接索引，假设每个文件最多直接索引6个逻辑块来填写文件数据，也就是
+            每个文件数据上限是6 * 1024B = 6KB。假设一个文件的索引节点，采用一个逻辑
+            块存储（见下面说明）。那么维护一个文件所需要的存储容量是6KB + 1KB = 7KB。
+            那么4MB磁盘，最多可以存放的文件数是4MB / 7KB = 585。
+
+            超级块，1个逻辑块。超级块区需要保存刷回磁盘的struct super_block_d，一般
+            这个结构体的大小会小于1024B，我们用一个逻辑块作为超级块存储 struct super_block_d即可。
+
+            索引节点位图，1个逻辑块。上述文件系统最多支持585个文件维护，一个逻辑块
+            （1024B）的位图可以管理1024 * 8 = 8192个索引节点，完全足够。
+
+            数据块位图，1个逻辑块。上述文件系统总共逻辑块数才4096，一个逻辑块（1024B）
+            的位图可以管理8192个逻辑块，足够。
+
+            索引节点区，585个逻辑块。上述文件系统假设一个逻辑块放一个索引节点struct inode_d，
+            585个文件需要有585索引节点，也就是585个逻辑块。
+
+            数据块区，3508个逻辑块。剩下的都作为数据块，还剩4096 - 1 - 1 - 1 - 585 = 3508个逻辑块。
+            注：struct inode_d的大小一般是比1024B小很多的，一个逻辑块放一个struct inode_d会显得有
+            点奢侈，这里是简单起见，同学们可以确定struct inode_d的大小后，自行决定一个逻辑块放多少个
+            索引节点struct inode_d。
+         * 
+         */
+
+        // 超级块，占1个块
+        super_blks = 1;
+        // Inode Map 占1个块
+        map_inode_blks = 1;
+        // Data Map 占1个块
+        map_data_blks = 1;
         
-                                                      /* 布局layout */
-        sfs_super.max_ino = (inode_num - super_blks - map_inode_blks); 
-        sfs_super_d.map_inode_offset = SFS_SUPER_OFS + SFS_BLKS_SZ(super_blks);
-        sfs_super_d.data_offset = sfs_super_d.map_inode_offset + SFS_BLKS_SZ(map_inode_blks);
+        /* 布局layout */
+        // 总的 inode 数量
+        sfs_super_d.max_ino = SFS_BLKS_SZ(map_inode_blks)*8;
+        // Inode Map
         sfs_super_d.map_inode_blks  = map_inode_blks;
-        sfs_super_d.sz_usage    = 0;
-        SFS_DBG("inode map blocks: %d\n", map_inode_blks);
+        sfs_super_d.map_inode_offset = SFS_SUPER_OFS + SFS_BLKS_SZ(super_blks);
+        // Data Map
+        sfs_super_d.map_data_blks  = map_data_blks;
+        sfs_super_d.map_data_offset = sfs_super_d.map_inode_offset + SFS_BLKS_SZ(map_inode_blks);
+        // Inode Offset
+        sfs_super_d.inode_offset = sfs_super_d.map_data_offset +  SFS_BLKS_SZ(map_data_blks);
+        // Data Offset
+        sfs_super_d.data_offset = sfs_super_d.inode_offset + SFS_BLKS_SZ(sfs_super_d.max_ino);
+        
+        sfs_super_d.sz_usage    = 0;        
+
+        // 标记这个磁盘是第一次使用
         is_init = TRUE;
-    }
+    }    
+
+    sfs_super.max_ino = sfs_super_d.max_ino;
     sfs_super.sz_usage   = sfs_super_d.sz_usage;      /* 建立 in-memory 结构 */
-    
-    sfs_super.map_inode = (uint8_t *)malloc(SFS_BLKS_SZ(sfs_super_d.map_inode_blks));
+            
+    // 读取 Inode Map
     sfs_super.map_inode_blks = sfs_super_d.map_inode_blks;
     sfs_super.map_inode_offset = sfs_super_d.map_inode_offset;
-    sfs_super.data_offset = sfs_super_d.data_offset;
-
-    if (sfs_driver_read(sfs_super_d.map_inode_offset, (uint8_t *)(sfs_super.map_inode), 
-                        SFS_BLKS_SZ(sfs_super_d.map_inode_blks)) != SFS_ERROR_NONE) {
-        return -SFS_ERROR_IO;
+    sfs_super.map_inode = (uint8_t *)malloc(SFS_BLKS_SZ(sfs_super.map_inode_blks));
+    if (TRUE == is_init){  // 磁盘第一次使用，我们把 Inode Map 清零
+        SFS_DBG("map_inode Init 0\n");
+        memset(sfs_super.map_inode, 0, SFS_BLKS_SZ(sfs_super.map_inode_blks));
+    }else{ // 不是第一次使用，我们从磁盘读取之前保存的数据
+        SFS_DBG("map_inode Read From Disk\n");
+        if (sfs_driver_read(sfs_super.map_inode_offset, (uint8_t *)(sfs_super.map_inode), 
+                                SFS_BLKS_SZ(sfs_super.map_inode_blks)) != SFS_ERROR_NONE) {
+                return -SFS_ERROR_IO;
+            }
     }
-
+    
+    // 读取 Data Map
+    sfs_super.map_data_blks = sfs_super_d.map_data_blks;
+    sfs_super.map_data_offset = sfs_super_d.map_data_offset;
+    sfs_super.map_data = (uint8_t *)malloc(SFS_BLKS_SZ(sfs_super.map_data_blks));
+    if (TRUE == is_init){  // 磁盘第一次使用，我们把 Data Map 清零
+        SFS_DBG("map_data Init 0\n");
+        memset(sfs_super.map_data, 0, SFS_BLKS_SZ(sfs_super.map_data_blks));
+    }else{ // 不是第一次使用，我们从磁盘读取之前保存的数据
+        SFS_DBG("map_data Read From Disk\n");
+        if (sfs_driver_read(sfs_super.map_data_offset, (uint8_t *)(sfs_super.map_data), 
+                                SFS_BLKS_SZ(sfs_super.map_data_blks)) != SFS_ERROR_NONE) {
+                return -SFS_ERROR_IO;
+            }
+    }
+    
+    sfs_super.inode_offset = sfs_super_d.inode_offset;
+    sfs_super.data_offset = sfs_super_d.data_offset;
+       
     if (is_init) {                                    /* 分配根节点 */
         root_inode = sfs_alloc_inode(root_dentry);
         sfs_sync_inode(root_inode);
     }
-    
+       
     root_inode            = sfs_read_inode(root_dentry, SFS_ROOT_INO);
     root_dentry->inode    = root_inode;
     sfs_super.root_dentry = root_dentry;
-    sfs_super.is_mounted  = TRUE;
+    sfs_super.is_mounted  = TRUE;   
 
-    sfs_dump_map();
+
+    SFS_DBG("Max Inode   Number: %d\n", sfs_super.max_ino);
+    SFS_DBG("Super Block Offset: %d\n", SFS_SUPER_OFS);
+    SFS_DBG("Inode Map   Offset: %d\n", sfs_super.map_inode_offset);
+    SFS_DBG("Data  Map   Offset: %d\n", sfs_super.map_data_offset);
+    SFS_DBG("Inode       Offset: %d\n", sfs_super.inode_offset);
+    SFS_DBG("Data        Offset: %d\n", sfs_super.data_offset);  
+
+    // sfs_dump_map();
     return ret;
 }
 /**
@@ -582,25 +691,44 @@ int sfs_umount() {
         return SFS_ERROR_NONE;
     }
 
+    // 写入目录和文件数据
+    SFS_DBG("\n");
+    SFS_DBG("umount sync inode\n");
     sfs_sync_inode(sfs_super.root_dentry->inode);     /* 从根节点向下刷写节点 */
                                                     
-    sfs_super_d.magic_num           = SFS_MAGIC_NUM;
-    sfs_super_d.map_inode_blks      = sfs_super.map_inode_blks;
-    sfs_super_d.map_inode_offset    = sfs_super.map_inode_offset;
-    sfs_super_d.data_offset         = sfs_super.data_offset;
-    sfs_super_d.sz_usage            = sfs_super.sz_usage;
-
+    // 写入 Super Block                                                     
+    sfs_super_d.magic_num          = SFS_MAGIC_NUM;
+    sfs_super_d.sz_usage           = sfs_super.sz_usage;
+    sfs_super_d.max_ino            = sfs_super.max_ino;
+    sfs_super_d.map_inode_blks     = sfs_super.map_inode_blks;
+    sfs_super_d.map_inode_offset   = sfs_super.map_inode_offset;
+    sfs_super_d.map_data_blks      = sfs_super.map_data_blks;
+    sfs_super_d.map_data_offset    = sfs_super.map_data_offset;
+    sfs_super_d.inode_offset       = sfs_super.inode_offset;
+    sfs_super_d.data_offset        = sfs_super.data_offset;
+    
+    SFS_DBG("umount write super block\n");
     if (sfs_driver_write(SFS_SUPER_OFS, (uint8_t *)&sfs_super_d, 
                      sizeof(struct sfs_super_d)) != SFS_ERROR_NONE) {
         return -SFS_ERROR_IO;
     }
 
+    // 写入 Inode Map
+    SFS_DBG("umount write inode map\n");
     if (sfs_driver_write(sfs_super_d.map_inode_offset, (uint8_t *)(sfs_super.map_inode), 
                          SFS_BLKS_SZ(sfs_super_d.map_inode_blks)) != SFS_ERROR_NONE) {
         return -SFS_ERROR_IO;
     }
-
     free(sfs_super.map_inode);
+
+    // 写入 Data Map 
+    SFS_DBG("umount write data map\n");
+    if (sfs_driver_write(sfs_super_d.map_data_offset, (uint8_t *)(sfs_super.map_data), 
+                         SFS_BLKS_SZ(sfs_super_d.map_data_blks)) != SFS_ERROR_NONE) {
+        return -SFS_ERROR_IO;
+    }    
+    free(sfs_super.map_data);
+
     ddriver_close(SFS_DRIVER());
 
     return SFS_ERROR_NONE;

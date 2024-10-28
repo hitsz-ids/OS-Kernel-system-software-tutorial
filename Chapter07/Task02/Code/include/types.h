@@ -39,7 +39,7 @@ typedef enum sfs_file_type {
 
 #define SFS_MAX_FILE_NAME       128
 #define SFS_INODE_PER_FILE      1
-#define SFS_DATA_PER_FILE       16
+#define SFS_DATA_PER_FILE       1       //一个文件只占用一个数据块 1024，目的是为了简化设计
 #define SFS_DEFAULT_PERM        0777
 
 #define SFS_IOC_MAGIC           'S'
@@ -51,18 +51,21 @@ typedef enum sfs_file_type {
 * SECTION: Macro Function
 *******************************************************************************/
 #define SFS_IO_SZ()                     (sfs_super.sz_io)
+#define SFS_BLK_SZ()                    (SFS_IO_SZ() * 2)
 #define SFS_DISK_SZ()                   (sfs_super.sz_disk)
 #define SFS_DRIVER()                    (sfs_super.driver_fd)
 
 #define SFS_ROUND_DOWN(value, round)    ((value) % (round) == 0 ? (value) : ((value) / (round)) * (round))
 #define SFS_ROUND_UP(value, round)      ((value) % (round) == 0 ? (value) : ((value) / (round) + 1) * (round))
 
-#define SFS_BLKS_SZ(blks)               ((blks) * SFS_IO_SZ())
+#define SFS_BLKS_SZ(blks)               ((blks) * SFS_BLK_SZ())
 #define SFS_ASSIGN_FNAME(psfs_dentry, _fname)\ 
                                         memcpy(psfs_dentry->fname, _fname, strlen(_fname))
-#define SFS_INO_OFS(ino)                (sfs_super.data_offset + (ino) * SFS_BLKS_SZ((\
-                                        SFS_INODE_PER_FILE + SFS_DATA_PER_FILE)))
-#define SFS_DATA_OFS(ino)               (SFS_INO_OFS(ino) + SFS_BLKS_SZ(SFS_INODE_PER_FILE))
+
+// 获取 inode 保存的磁盘 offset
+#define SFS_INO_OFS(ino)                (sfs_super.inode_offset + (ino) * SFS_BLK_SZ())
+// 获取 data 保存的磁盘 offset 
+#define SFS_DATA_OFS(dno)               (sfs_super.data_offset +  (dno) * SFS_BLK_SZ())
 
 #define SFS_IS_DIR(pinode)              (pinode->dentry->ftype == SFS_DIR)
 #define SFS_IS_REG(pinode)              (pinode->dentry->ftype == SFS_REG_FILE)
@@ -81,7 +84,8 @@ struct custom_options {
 
 struct sfs_inode
 {
-    int                ino;                           /* 在inode位图中的下标 */
+    int                ino;                           /* 在 Inode Map 中的下标 */
+    int                dno;                           /* 在 Data Map 中的下标 */
     int                size;                          /* 文件已占用空间 */
     char               target_path[SFS_MAX_FILE_NAME];/* store traget path when it is a symlink */
     int                dir_cnt;
@@ -100,6 +104,14 @@ struct sfs_dentry
     SFS_FILE_TYPE      ftype;
 };
 
+/** 这个是内存结构，方便平时操作，下面  struct sfs_super_d  是对应磁盘结构 
+ * 
+ * | Super(1) | Inode Map(1) | DATA Map(1) | INODE(1) | DATA(*) |
+ * 
+ *  在 sfs_mount 的时候从磁盘读取，然后加载到这里
+ *  在 sfs_umount 的时候重新写回到磁盘
+ * 
+*/
 struct sfs_super
 {
     int                driver_fd;
@@ -109,10 +121,21 @@ struct sfs_super
     int                sz_usage;
     
     int                max_ino;
+
+    // Inode Map
     uint8_t*           map_inode;
     int                map_inode_blks;
     int                map_inode_offset;
     
+    // Data Map
+    uint8_t*           map_data;
+    int                map_data_blks;
+    int                map_data_offset;
+    
+    // Inode 
+    int                inode_offset;
+
+    // Data 
     int                data_offset;
 
     boolean            is_mounted;
@@ -131,7 +154,12 @@ static inline struct sfs_dentry* new_dentry(char * fname, SFS_FILE_TYPE ftype) {
     dentry->brother = NULL;                                            
 }
 /******************************************************************************
+*  这个是磁盘结构，和保存在磁盘上的数据一一对应
+*  在 sfs_mount 的时候从磁盘读取，然后加载到这里
+*  在 sfs_umount 的时候重新写回到磁盘
+*
 * SECTION: FS Specific Structure - Disk structure
+* | Super(1) | Inode Map(1) | DATA Map(1) | INODE(1) | DATA(*) |
 *******************************************************************************/
 struct sfs_super_d
 {
@@ -139,14 +167,22 @@ struct sfs_super_d
     uint32_t           sz_usage;
     
     uint32_t           max_ino;
+    // Inode Map(1) 
     uint32_t           map_inode_blks;
     uint32_t           map_inode_offset;
+    // DATA Map(1) 
+    uint32_t           map_data_blks;
+    uint32_t           map_data_offset;    
+    // INODE
+    uint32_t           inode_offset;
+    // DATA
     uint32_t           data_offset;
 };
 
 struct sfs_inode_d
 {
-    uint32_t           ino;                           /* 在inode位图中的下标 */
+    uint32_t           ino;                           /* 在 Inode Map 中的下标 */
+    uint32_t           dno;                           /* 在 Data Map 中的下标 */
     uint32_t           size;                          /* 文件已占用空间 */
     char               target_path[SFS_MAX_FILE_NAME];/* store traget path when it is a symlink */
     uint32_t           dir_cnt;
